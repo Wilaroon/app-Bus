@@ -1,6 +1,6 @@
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field,Enum
 from typing import Optional
-from enum import Enum
+
 
 # 🔹 Modelo base
 class RouteBase(SQLModel):
@@ -32,7 +32,7 @@ class RouteUpdate(SQLModel):
 #Models Bus 
 # --- 1. Enumeración para el campo 'b_status' ---
 # Esto asegura que el valor de 'b_status' sea siempre uno de los permitidos.
-class BusStatus(str, Enum):
+class BusStatus(str,):
     """Estatus del bus."""
     EN_RUTA = "En ruta"
     EN_PARADA = "En parada"
@@ -40,14 +40,15 @@ class BusStatus(str, Enum):
 
 # --- 2. Modelo Base (Campos comunes) ---
 class BusBase(SQLModel):
-    b_asgroute: Optional[str] = Field(default=None, max_length=10) # Ruta asignada
-    b_current_stop: Optional[str] = Field(default=None, max_length=10) # Parada actual
-    b_next_stop: Optional[str] = Field(default=None, max_length=10) # Próxima parada
-    b_status: BusStatus = Field(default=BusStatus.EN_RUTA) # Estatus con el valor por defecto
+    b_asgroute: Optional[str] = Field(default=None, max_length=10)  # Ruta asignada
+    b_current_stop: Optional[str] = Field(default=None, max_length=10)  # Parada actual
+    b_next_stop: Optional[str] = Field(default=None, max_length=10)  # Próxima parada
+    b_status: str = Field(default="En ruta", max_length=50)  # 👈 Ahora solo texto
 
 # --- 3. Modelo de la Tabla (SQLModel) ---
 # Este modelo se usa internamente y es la representación "cruda" de la fila de la BD.
 class Bus(BusBase, table=True):
+    __tablename__ = "buses"
     b_id: str = Field(primary_key=True, max_length=10)
 
 # --- 4. Modelo para la Lectura Pública (Pydantic) ---

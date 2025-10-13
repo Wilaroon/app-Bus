@@ -125,12 +125,21 @@ def delete_route(r_id: str, session: session_dep):
     session.commit()
     return {"ok": True, "message": f"Ruta con id {r_id} eliminada correctamente"}
 
-#---------------obtiene buses-------
+"""#---------------obtiene buses-------
 # --- Endpoint GET para obtener todos los buses ---
 
 @app.get("/buses/", response_model=List[BusPublic])
 def read_buses(session: Session = Depends(get_session)):
     statement = select(Bus)
     buses = session.exec(statement).all()
+    return buses"""
+
+@app.get("/buses/", response_model=list[BusPublic])
+def read_buses(
+    session: session_dep,
+    offset: int = 0,
+    limit: Annotated[int, Query(le=100)] = 100
+):
+    buses = session.exec(select(Bus).offset(offset).limit(limit)).all()
     return buses
 
