@@ -5,11 +5,11 @@ from sqlmodel import  Session,  select, SQLModel, Field, create_engine
 
 from database import engine
 
-from typing import Annotated
+from typing import Annotated,List
 
 from contextlib import asynccontextmanager
 
-from models import Route, RouteCreate, RoutePublic, RouteUpdate
+from models import Route, RouteCreate, RoutePublic, RouteUpdate,BusBase,BusCreate,BusPublic,BusStatus,Bus
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -124,3 +124,13 @@ def delete_route(r_id: str, session: session_dep):
     session.delete(route)
     session.commit()
     return {"ok": True, "message": f"Ruta con id {r_id} eliminada correctamente"}
+
+#---------------obtiene buses-------
+# --- Endpoint GET para obtener todos los buses ---
+
+@app.get("/buses/", response_model=List[BusPublic])
+def read_buses(session: Session = Depends(get_session)):
+    statement = select(Bus)
+    buses = session.exec(statement).all()
+    return buses
+
