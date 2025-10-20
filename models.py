@@ -61,3 +61,33 @@ class BusPublic(BusBase):
 class BusCreate(BusBase):
     b_id: str = Field(max_length=10) # Debe ser obligatorio al crear
     # El resto de campos hereda los defaults y opcionales.
+
+
+
+    #Taximetro
+
+
+class LugarBase(SQLModel):
+    """Define los campos comunes a la creación y actualización de una parada."""
+    
+    # Campo p_nombre (VARCHAR(255) | NO NULL)
+    p_nombre: str = Field(..., max_length=255) 
+    
+    # Campo latitud (DECIMAL(10,8) | NO NULL)
+    latitud: float = Field(...)
+    
+    # Campo longitud (DECIMAL(11,8) | NO NULL)
+    longitud: float = Field(...)
+     # class Lugar(LugarBase, table=True):
+
+  #  __tablename__ = "paradas" 
+    
+    # Campo id (INT | PRIMARY KEY | AUTO_INCREMENT | NO NULL)
+  # id: Optional[int] = Field(default=None, primary_key=True)
+
+
+class Lugar(LugarBase, table=True):
+    __tablename__="paradas"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+  
