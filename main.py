@@ -5,13 +5,18 @@ from sqlmodel import  Session,  select, SQLModel, Field, create_engine
 
 from database import engine
 
+from calculotarifa import calcular_tarifa
+
 from typing import Annotated,List
 
 from contextlib import asynccontextmanager
 
-from models import Route, RouteCreate, RoutePublic, RouteUpdate,BusBase,BusCreate,BusPublic,BusStatus,Bus
+from models import Route, RouteCreate, RoutePublic, RouteUpdate,BusBase,BusCreate,BusPublic,BusStatus,Bus, Lugar,LugarBase
 
 from fastapi.middleware.cors import CORSMiddleware
+
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 
 def create_db_and_tables():
 
@@ -125,16 +130,16 @@ def delete_route(r_id: str, session: session_dep):
     session.commit()
     return {"ok": True, "message": f"Ruta con id {r_id} eliminada correctamente"}
 
-"""#---------------obtiene buses-------
+#---------------obtiene buses-------
 # --- Endpoint GET para obtener todos los buses ---
 
 @app.get("/buses/", response_model=List[BusPublic])
 def read_buses(session: Session = Depends(get_session)):
     statement = select(Bus)
     buses = session.exec(statement).all()
-    return buses"""
+    return buses
 
-@app.get("/buses/", response_model=list[BusPublic])
+"""@app.get("/buses/", response_model=list[BusPublic])
 def read_buses(
     session: session_dep,
     offset: int = 0,
@@ -142,4 +147,60 @@ def read_buses(
 ):
     buses = session.exec(select(Bus).offset(offset).limit(limit)).all()
     return buses
+"""
+#taximetro 
 
+@app.get("/lugares/{l_id}", response_model=Lugar)
+def read_lugar(l_id: int, session: Session = Depends(get_session)):
+    lugar = session.get(Lugar, l_id)
+    if not lugar:
+        raise HTTPException(status_code=404, detail="Lugar no encontrado")
+    return lugar
+
+# ---------- Listar todos los lugares ----------
+@app.get("/lugares", response_model=List[Lugar])
+def listar_lugares(session: session_dep):
+    lugares = session.query(Lugar).all()
+    if not lugares:
+        raise HTTPException(status_code=404, detail="No hay lugares registrados")
+    
+    # 🌟 Usa JSONResponse y jsonable_encoder
+    return JSONResponse(content=jsonable_encoder(lugares))
+
+# ---------- Crear un nuevo lugar ----------
+@app.post("/lugares", response_model=Lugar)
+def crear_lugar(lugar: LugarBase, session: session_dep):
+    nuevo_lugar = Lugar(
+        p_nombre=lugar.p_nombre,
+        latitud=lugar.latitud,
+        longitud=lugar.longitud
+    )
+    session.add(nuevo_lugar)
+    session.commit()
+    session.refresh(nuevo_lugar)
+    return nuevo_lugar
+
+
+@app.get("/calcular-tarifa/{id_origen}/{id_destino}")
+def calcular_tarifa_bd(id_origen: int, id_destino: int, session: session_dep):
+    # Obtener lugares desde la base de datos
+    origen = session.get(Lugar, id_origen)
+    destino = session.get(Lugar, id_destino)
+
+    if not origen:
+        raise HTTPException(status_code=404, detail="Origen no encontrado")
+    if not destino:
+        raise HTTPException(status_code=404, detail="Destino no encontrado")
+
+    # Calcular la distancia y la tarifa
+    distancia, tarifa = calcular_tarifa(
+        origen.latitud, origen.longitud,
+        destino.latitud, destino.longitud
+    )
+
+    return {
+        "origen": origen.p_nombre,
+        "destino": destino.p_nombre,
+        "distancia_km": distancia,
+        "tarifa": tarifa
+    }
